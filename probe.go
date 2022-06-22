@@ -5,11 +5,11 @@ import (
 	"sync/atomic"
 )
 
-type ReadyzProbe struct {
+type Probe struct {
 	probe *atomic.Value
 }
 
-func (l *ReadyzProbe) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (l *Probe) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if condition := l.probe.Load().(bool); condition {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -19,8 +19,8 @@ func (l *ReadyzProbe) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewReadyzProbe(probe *atomic.Value) *ReadyzProbe {
-	return &ReadyzProbe{
+func NewProbe(probe *atomic.Value) *Probe {
+	return &Probe{
 		probe,
 	}
 }

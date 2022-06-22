@@ -26,8 +26,8 @@ func (l *LivelinessServer) Start() {
 	isReady.Store(false)
 
 	mux := http.NewServeMux()
-	mux.Handle("/readyz", NewReadyzProbe(isReady))
-	mux.Handle("/healthz", NewHealthzProbe(isHealthy))
+	mux.Handle("/readyz", NewProbe(isReady))
+	mux.Handle("/healthz", NewProbe(isHealthy))
 
 	l.server.Handler = mux
 
