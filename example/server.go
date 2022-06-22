@@ -21,7 +21,7 @@ func main() {
 		Handler: mux,
 	}
 
-	livenessServer := liveliness.NewLivelinessServer(":9090", false, time.Second*5)
+	livenessServer := liveliness.NewLivelinessServer(liveliness.NewServerOptions())
 
 	livenessServer.RegisterExitHandler(server.Close)
 

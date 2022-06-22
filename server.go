@@ -14,17 +14,20 @@ var (
 	isHealthy = &atomic.Value{}
 )
 
+// LivelinessServer is a struct containing the http.Server which is used to serve the probe endpoints.
 type LivelinessServer struct {
 	server       http.Server
 	shouldRun    bool
-	gracePeriod  time.Duration
+	opts         *ServerOptions
 	exitHandlers []func() error
 }
 
+// Start starts the liveliness server and registers the probe endpoints.
 func (l *LivelinessServer) Start() {
 	mux := http.NewServeMux()
-	mux.Handle("/readyz", NewProbe(isReady))
-	mux.Handle("/healthz", NewProbe(isHealthy))
+
+	mux.Handle(l.opts.ReadyEndpoint, NewProbe(isReady))
+	mux.Handle(l.opts.HealthEndpoint, NewProbe(isHealthy))
 
 	l.server.Handler = mux
 
@@ -39,7 +42,7 @@ func (l *LivelinessServer) Start() {
 
 	SignalIsNotReady()
 
-	<-time.After(l.gracePeriod)
+	<-time.After(l.opts.GracePeriod)
 
 	for _, handler := range l.exitHandlers {
 		handler()
@@ -48,6 +51,7 @@ func (l *LivelinessServer) Start() {
 	l.Stop()
 }
 
+// Stop stops the liveliness server.
 func (l *LivelinessServer) Stop() error {
 	if l.shouldRun {
 		return l.server.Close()
@@ -56,26 +60,28 @@ func (l *LivelinessServer) Stop() error {
 	return nil
 }
 
+// RegisterExitHandler registers a function to be called when the server is stopped.
 func (l *LivelinessServer) RegisterExitHandler(handler ...func() error) {
 	l.exitHandlers = append(l.exitHandlers, handler...)
 }
 
-func NewLivelinessServer(addr string, detectKubernetes bool, gracePeriod time.Duration) *LivelinessServer {
+// NewLivelinessServer creates a new liveliness server with the given options.
+func NewLivelinessServer(opts *ServerOptions) *LivelinessServer {
 	isHealthy.Store(false)
 	isReady.Store(false)
 
 	server := http.Server{}
-	server.Addr = addr
+	server.Addr = opts.Addr
 
 	shouldRun := true
-	if detectKubernetes && os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
+	if opts.DetectKubernetes && os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
 		shouldRun = false
 	}
 
 	return &LivelinessServer{
 		server,
 		shouldRun,
-		gracePeriod,
+		opts,
 		[]func() error{},
 	}
 }
