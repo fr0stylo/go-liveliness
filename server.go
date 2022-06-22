@@ -15,9 +15,10 @@ var (
 )
 
 type LivelinessServer struct {
-	server      http.Server
-	shouldRun   bool
-	gracePeriod time.Duration
+	server       http.Server
+	shouldRun    bool
+	gracePeriod  time.Duration
+	exitHandlers []func() error
 }
 
 func (l *LivelinessServer) Start() {
@@ -43,6 +44,10 @@ func (l *LivelinessServer) Start() {
 
 	<-time.After(l.gracePeriod)
 
+	for _, handler := range l.exitHandlers {
+		handler()
+	}
+
 	l.Stop()
 }
 
@@ -58,6 +63,10 @@ func (l *LivelinessServer) SignalIsHealthy() {
 	isHealthy.Store(true)
 }
 
+func (l *LivelinessServer) RegisterExitHandler(handler ...func() error) {
+	l.exitHandlers = append(l.exitHandlers, handler...)
+}
+
 func NewLivelinessServer(addr string, detectKubernetes bool, gracePeriod time.Duration) *LivelinessServer {
 	server := http.Server{}
 	server.Addr = addr
@@ -71,5 +80,6 @@ func NewLivelinessServer(addr string, detectKubernetes bool, gracePeriod time.Du
 		server,
 		shouldRun,
 		gracePeriod,
+		[]func() error{},
 	}
 }
