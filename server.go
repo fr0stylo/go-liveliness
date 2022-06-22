@@ -22,9 +22,6 @@ type LivelinessServer struct {
 }
 
 func (l *LivelinessServer) Start() {
-	isHealthy.Store(false)
-	isReady.Store(false)
-
 	mux := http.NewServeMux()
 	mux.Handle("/readyz", NewProbe(isReady))
 	mux.Handle("/healthz", NewProbe(isHealthy))
@@ -59,15 +56,14 @@ func (l *LivelinessServer) Stop() error {
 	return nil
 }
 
-func (l *LivelinessServer) SignalIsHealthy() {
-	isHealthy.Store(true)
-}
-
 func (l *LivelinessServer) RegisterExitHandler(handler ...func() error) {
 	l.exitHandlers = append(l.exitHandlers, handler...)
 }
 
 func NewLivelinessServer(addr string, detectKubernetes bool, gracePeriod time.Duration) *LivelinessServer {
+	isHealthy.Store(false)
+	isReady.Store(false)
+
 	server := http.Server{}
 	server.Addr = addr
 

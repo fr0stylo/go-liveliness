@@ -1,6 +1,9 @@
 package liveliness
 
-import "syscall"
+import (
+	"log"
+	"syscall"
+)
 
 func IsReady() bool {
 	return isReady.Load().(bool)
@@ -13,6 +16,8 @@ func IsHealthy() bool {
 func SignalIsReady() {
 	isReady.Store(true)
 	isHealthy.Store(true)
+
+	log.Print(isHealthy.Load())
 }
 
 func SignalIsNotReady() {

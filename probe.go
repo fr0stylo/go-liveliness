@@ -1,6 +1,7 @@
 package liveliness
 
 import (
+	"log"
 	"net/http"
 	"sync/atomic"
 )
@@ -10,6 +11,7 @@ type Probe struct {
 }
 
 func (l *Probe) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Print(l.probe.Load())
 	if condition := l.probe.Load().(bool); condition {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
